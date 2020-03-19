@@ -1,0 +1,7 @@
+<uwsgi>
+   <socket>127.0.0.1:8881</socket> <!-- 内部端口，自定义 -->
+   <chdir>/data/wwwroot/ms_blog/</chdir> <!-- 项目路径 -->
+   <module>ms_blog.wsgi</module>  <!-- mysite为wsgi.py所在目录名-->
+   <processes>4</processes> <!-- 进程数 -->
+   <daemonize>ms_blog.log</daemonize> <!-- 日志文件 -->
+</uwsgi>
