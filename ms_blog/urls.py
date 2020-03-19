@@ -3,6 +3,7 @@ from django.contrib import admin
 from blog import views
 from django.views.static import serve
 from django.conf.urls.static import static
+from ms_blog import settings
 
 
 urlpatterns = [

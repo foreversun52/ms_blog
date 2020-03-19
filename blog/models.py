@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from mdeditor.fields import MDTextField
 
 # Create your models here.
 # 用户信息表
@@ -59,9 +59,10 @@ class Tag(models.Model):
 class Article(models.Model):
     title = models.CharField(max_length=64)
     desc = models.CharField(max_length=255)
-    content = models.TextField()  # 大段文本
+    content = MDTextField()  # Markdown文本
     create_time = models.DateField(auto_now_add=True)
-
+    # 置顶
+    stick = models.BooleanField(default=False, verbose_name='置顶')
     # 数据库字段优化
     comment_num = models.BigIntegerField(default=0)
     up_num = models.BigIntegerField(default=0)

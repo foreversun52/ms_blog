@@ -8,7 +8,12 @@
         <ul class="media-list">
             {% for article in page_queryset %}
                 <li class="media"><a href="/{{ article.blog.userinfo.username }}/article/{{ article.pk }}"><h4
-                        class="media-heading">{{ article.title }}</h4></a>
+                        class="media-heading">
+                    {% if article.stick %}
+                    [置顶]
+                    {% endif %}
+                    {{ article.title }}
+                </h4></a>
                     <div class="media-left">
                         <a href="#">
                             <img class="media-object" src="/media/{{ article.blog.userinfo.avatar }}" alt="..."

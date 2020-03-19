@@ -59,7 +59,7 @@
     <h2>{{ article_obj.title }}</h2><br>
     <span>作者：{{ article_obj.blog.userinfo.username }} 发布日期:{{ article_obj.create_time|date:'Y-m-d' }}</span> <br><br>
     <div><b>文章正文:</b>
-        {{ article_obj.content|safe }}
+        <div>{{ article_obj.content|safe }}</div>
     </div>
 
 
@@ -208,3 +208,6 @@
         })
     </script>
 {% endblock %}
+
+
+

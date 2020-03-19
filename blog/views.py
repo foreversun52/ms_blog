@@ -15,6 +15,7 @@ from django.db import transaction
 from bs4 import BeautifulSoup
 from ms_blog import settings
 import os
+import markdown
 
 
 # Create your views here.
@@ -98,7 +99,7 @@ def get_code(request):
 
 def home(request):
     # 将当前网站上的所有的文章全部展示到前端页面
-    article_list = models.Article.objects.all()
+    article_list = models.Article.objects.all().order_by('-stick','create_time')
     page_obj = Pagination(current_page=request.GET.get('page', 1), all_count=article_list.count())
     page_queryset = article_list[page_obj.start:page_obj.end]
     return render(request, 'home.html', locals())
@@ -186,6 +187,12 @@ def create_blog(request, username):
 
 def article_detail(request, username, article_id):
     article_obj = models.Article.objects.filter(pk=article_id).first()
+    article_obj.content = markdown.markdown(article_obj.content,
+                                  extensions=[
+                                      'markdown.extensions.extra',
+                                      'markdown.extensions.codehilite',
+                                      'markdown.extensions.toc',
+                                  ])
     comment_list = models.Comment.objects.filter(article=article_obj)
     return render(request, 'article_detail.html', locals())
 
@@ -256,10 +263,14 @@ def backend(request):
 @login_required
 def add_article(request):
     if request.method == "POST":
+        zd = False
         title = request.POST.get('title')
         content = request.POST.get('content')
+        stick = request.POST.get('stick')
+        if stick:
+            zd = True
         category_id = request.POST.get('category')
-        tag_list = request.POST.getlist('tag')
+
 
         # 先生成一个对象
         soup = BeautifulSoup(content, 'html.parser')
@@ -274,17 +285,11 @@ def add_article(request):
         # desc = content[0:150]
         # 先获取文章文本内容  再截取150个字符
         desc = soup.text[0:150]
-        article_obj = models.Article.objects.create(title=title, desc=desc, content=str(soup), category_id=category_id,
+        article_obj = models.Article.objects.create(title=title, desc=desc, content=str(soup), category_id=category_id,stick=zd,
                                                     blog=request.user.blog)
-        # 关系表是我们自己建的 没法使用add set等方法
-        tag_article_list = []
-        for i in tag_list:
-            tag_article_list.append(models.Article2Tag(article=article_obj, tag_id=i))
-        # 批量插入数据
-        models.Article2Tag.objects.bulk_create(tag_article_list)
+
         return redirect('/backend/')
     category_list = models.Category.objects.filter(blog=request.user.blog)
-    tag_list = models.Tag.objects.filter(blog=request.user.blog)
     return render(request, 'backend/add_article.html', locals())
 
 
@@ -318,17 +323,21 @@ def set_img(request):
 @login_required
 def edit_article(request, article_id):
     article_obj = models.Article.objects.filter(pk=article_id).first()
+    article_obj.content = markdown.markdown(article_obj.content,
+                                  extensions=[
+                                      'markdown.extensions.extra',
+                                      'markdown.extensions.codehilite',
+                                      'markdown.extensions.toc',
+                                  ])
     category_list = models.Category.objects.filter(blog=request.user.blog)
-    tag_list = models.Tag.objects.filter(blog=request.user.blog)
     if request.method == "POST":
-        tags = models.Article2Tag.objects.filter(article_id=article_id)
-        for tag in tags:
-            models.Article2Tag.objects.filter(id=tag.id).delete()
+        zd = False
         title = request.POST.get('title')
         content = request.POST.get('content')
         category_id = request.POST.get('category')
-        tag_list = request.POST.getlist('tag')
-
+        stick = request.POST.get('stick')
+        if stick:
+            zd = True
         soup = BeautifulSoup(content, 'html.parser')
         tags = soup.find_all()
         for tag in tags:
@@ -337,19 +346,15 @@ def edit_article(request, article_id):
 
         desc = soup.text[0:150]
         article_obj = models.Article.objects.filter(pk=article_id).update(title=title, desc=desc, content=str(soup),
-                                                                          category_id=category_id,
+                                                                          stick= zd, category_id=category_id,
                                                                           blog=request.user.blog)
-        for i in tag_list:
-            models.Article2Tag.objects.create(article_id=article_id, tag_id=i)
+
         return redirect('/backend/')
     return render(request, 'backend/edit_article.html', locals())
 
 
 @login_required
 def del_article(request, article_id):
-    tags = models.Article2Tag.objects.filter(article_id=article_id)
-    for tag in tags:
-        models.Article2Tag.objects.filter(id=tag.id).delete()
     models.Article.objects.filter(pk=article_id).delete()
     return redirect('/backend/')
 
